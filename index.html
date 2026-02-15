@@ -2,9 +2,13 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>歩きお散歩ガチャ</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%234b6cb7%22/><text y=%22.9em%22 x=%225%22 font-size=%2280%22>🌍</text></svg>">
+
     <style>
         body { font-family: -apple-system, sans-serif; background: linear-gradient(180deg, #a1c4fd 0%, #c2e9fb 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         .card { background: white; width: 85%; max-width: 350px; padding: 30px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
@@ -23,9 +27,9 @@
     
     <span class="label">🚶‍♂️ ペース</span>
     <select id="speedSelect">
-        <option value="3.0">ゆっくり (3km/h)</option>
-        <option value="4.5" selected>ふつう (4.5km/h)</option>
-        <option value="5.5">早歩き (5.5km/h)</option>
+        <option value="3.0">ゆっくり</option>
+        <option value="4.5" selected>ふつう</option>
+        <option value="5.5">早歩き</option>
     </select>
 
     <span class="label">⏱ 時間 (往復)</span>
@@ -38,8 +42,8 @@
         <option value="60">60分</option>
     </select>
     
-    <button onclick="generateWalk()">ルートを作成！</button>
-    <p class="info">※毎回違う方角へルートを引きます</p>
+    <button onclick="generateWalk()">マップを開く</button>
+    <p class="info">アプリ版Googleマップを自動起動します</p>
 </div>
 
 <script>
@@ -58,31 +62,34 @@
             
             const speed = parseFloat(document.getElementById('speedSelect').value);
             const minutes = parseInt(document.getElementById('timeSelect').value);
-            
-            // 片道の距離(km)
             const distanceKm = (speed * (minutes / 60)) / 2;
             
-            // 360度ランダムな方向（完全にランダムにするため現在時刻のミリ秒を使用）
             const angle = Math.random() * 360;
-            
-            // 緯度・経度の移動量を計算
             const dLat = (distanceKm * Math.cos(angle * Math.PI / 180)) / 111;
             const dLng = (distanceKm * Math.sin(angle * Math.PI / 180)) / (111 * Math.cos(lat * Math.PI / 180));
             
             const destLat = lat + dLat;
             const destLng = lng + dLng;
 
-            // 【超重要】Googleマップに「この座標そのもの」を目的地と認識させる形式
-            // `ll`パラメータで座標を固定し、`dir`で経路を表示
-            const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=walking`;
+            // iPhoneのGoogleマップアプリを直接起動するためのURL
+            // daddr: 目的地座標, directionsmode: 徒歩
+            const appUrl = `comgooglemaps://?daddr=${destLat},${destLng}&directionsmode=walking`;
             
-            window.location.href = mapUrl;
-            
-            setTimeout(() => { btn.innerText = "ルートを作成！"; }, 1000);
+            // アプリ起動を試みる
+            window.location.href = appUrl;
+
+            // 万が一アプリが入っていない場合のバックアップ（2秒後にブラウザ版を開く）
+            setTimeout(() => {
+                if (!document.hidden) {
+                    const webUrl = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=walking`;
+                    window.location.href = webUrl;
+                }
+                btn.innerText = "マップを開く";
+            }, 2000);
 
         }, (error) => {
             alert("位置情報を取得できませんでした。");
-            btn.innerText = "ルートを作成！";
+            btn.innerText = "マップを開く";
         }, { enableHighAccuracy: true });
     }
 </script>
