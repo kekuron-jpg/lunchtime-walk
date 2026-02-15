@@ -43,16 +43,18 @@
         <option value="5">早歩き</option>
     </select>
 
-    <span class="label">⏱ 時間</span>
+    <span class="label">⏱ 時間（往復）</span>
     <select id="timeSelect">
-        <option value="15">15分</option>
+        <option value="10">10分</option>
+        <option value="20">20分</option>
         <option value="30" selected>30分</option>
-        <option value="45">45分</option>
+        <option value="40">40分</option>
+        <option value="50">50分</option>
         <option value="60">60分</option>
     </select>
     
-    <button onclick="generateWalk()">目的地を検索！</button>
-    <p class="info">名前のある場所を優先して探します</p>
+    <button onclick="generateWalk()">目的地を決定！</button>
+    <p class="info">近くのスポットを優先的に探します</p>
 </div>
 
 <script>
@@ -77,10 +79,9 @@
             const destLat = lat + dLat;
             const destLng = lng + dLng;
 
-            // 【ポイント】検索モード(search)を使用
-            // 近傍の「名前のある場所」をGoogleMapに探させるURL
-            // 地点だけでなく、周辺の面白い場所を勝手にターゲットにしてくれます
-            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${destLat},${destLng}`;
+            // Googleマップの「周辺にある名前付きスポット」を検索するURL形式に変更
+            // 'query=施設' というキーワードを添えることで、座標付近の建物を探しやすくなります
+            const mapUrl = `https://www.google.com/maps/search/?api=1&query=点+at+${destLat},${destLng}`;
             
             window.location.href = mapUrl;
 
