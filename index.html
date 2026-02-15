@@ -28,7 +28,7 @@
         <option value="5.5">早歩き (5.5km/h)</option>
     </select>
 
-    <span class="label">⏱ 時間 (10分単位)</span>
+    <span class="label">⏱ 時間 (往復)</span>
     <select id="timeSelect">
         <option value="10">10分</option>
         <option value="20">20分</option>
@@ -39,7 +39,7 @@
     </select>
     
     <button onclick="generateWalk()">ルートを作成！</button>
-    <p class="info">毎回違う場所を選びます</p>
+    <p class="info">※毎回違う方角へルートを引きます</p>
 </div>
 
 <script>
@@ -59,28 +59,29 @@
             const speed = parseFloat(document.getElementById('speedSelect').value);
             const minutes = parseInt(document.getElementById('timeSelect').value);
             
-            // 片道の距離
+            // 片道の距離(km)
             const distanceKm = (speed * (minutes / 60)) / 2;
             
-            // 【重要】ランダム性を高めるために現在の時刻（秒）を混ぜる
-            const seed = new Date().getTime() % 360;
-            const angle = (Math.random() * 360 + seed) % 360;
+            // 360度ランダムな方向（完全にランダムにするため現在時刻のミリ秒を使用）
+            const angle = Math.random() * 360;
             
+            // 緯度・経度の移動量を計算
             const dLat = (distanceKm * Math.cos(angle * Math.PI / 180)) / 111;
             const dLng = (distanceKm * Math.sin(angle * Math.PI / 180)) / (111 * Math.cos(lat * Math.PI / 180));
             
             const destLat = lat + dLat;
             const destLng = lng + dLng;
 
-            // GoogleマップのURL。末尾に毎回違うランダムな数値をつけて再読込を強制
-            const cacheBuster = Math.floor(Math.random() * 1000);
-            const mapUrl = `https://maps.google.com/?cid=12218220548926102701&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ2{destLat},${destLng}&travelmode=walking&random=${cacheBuster}`;
+            // 【超重要】Googleマップに「この座標そのもの」を目的地と認識させる形式
+            // `ll`パラメータで座標を固定し、`dir`で経路を表示
+            const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=walking`;
             
             window.location.href = mapUrl;
-            btn.innerText = "ルートを作成！";
+            
+            setTimeout(() => { btn.innerText = "ルートを作成！"; }, 1000);
 
         }, (error) => {
-            alert("位置情報を取得できませんでした");
+            alert("位置情報を取得できませんでした。");
             btn.innerText = "ルートを作成！";
         }, { enableHighAccuracy: true });
     }
