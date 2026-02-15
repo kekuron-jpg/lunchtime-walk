@@ -4,65 +4,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>爆速お散歩ガチャ</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
+
     <style>
-        body { font-family: -apple-system, sans-serif; background: #fdfaf0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: white; width: 85%; padding: 30px; border-radius: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
-        h1 { color: #f39c12; font-size: 1.5rem; margin-bottom: 20px; }
-        select { width: 100%; padding: 15px; font-size: 1.1rem; border: 2px solid #f1f2f6; border-radius: 15px; margin-bottom: 20px; appearance: none; text-align: center; }
-        button { background: #f39c12; color: white; border: none; padding: 18px 40px; border-radius: 50px; font-size: 1.2rem; font-weight: bold; width: 100%; transition: 0.2s; }
-        button:active { transform: scale(0.95); opacity: 0.8; }
-        p { font-size: 0.9rem; color: #7f8c8d; margin-top: 20px; line-height: 1.5; }
+        body { 
+            font-family: -apple-system, "Helvetica Neue", sans-serif; 
+            background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%); /* 爽やかなグラデーション */
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; margin: 0; color: #333;
+        }
+        .card { 
+            background: rgba(255, 255, 255, 0.9); 
+            width: 85%; max-width: 350px; padding: 30px; 
+            border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+            text-align: center; backdrop-filter: blur(10px);
+        }
+        h1 { color: #4b6cb7; font-size: 1.6rem; margin-bottom: 25px; }
+        .input-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 8px; color: #666; }
+        select { 
+            width: 100%; padding: 12px; font-size: 1rem; border: 2px solid #e0e0e0; 
+            border-radius: 12px; background: white; appearance: none;
+        }
+        button { 
+            background: #4b6cb7; color: white; border: none; padding: 18px; 
+            border-radius: 15px; font-size: 1.2rem; font-weight: bold; width: 100%; 
+            box-shadow: 0 4px 15px rgba(75, 108, 183, 0.3); transition: 0.2s;
+        }
+        button:active { transform: scale(0.98); }
+        .footer { font-size: 0.8rem; color: #fff; margin-top: 20px; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h1>📍 お散歩ガチャ</h1>
-    <label>散歩できる時間は？</label>
-    <select id="timeSelect">
-        <option value="10">10分 (約400m先まで)</option>
-        <option value="20" selected>20分 (約800m先まで)</option>
-        <option value="30">30分 (約1.2km先まで)</option>
-        <option value="60">60分 (約2.5km先まで)</option>
-    </select>
+    <h1>🌍 お散歩ガチャ</h1>
+    
+    <div class="input-group">
+        <label>🚶‍♂️ 歩くペース</label>
+        <select id="speedSelect">
+            <option value="3">ゆっくり (時速3km)</option>
+            <option value="4" selected>ふつう (時速4km)</option>
+            <option value="5">早歩き (時速5km)</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label>⏱ 時間</label>
+        <select id="timeSelect">
+            <option value="10">10分</option>
+            <option value="20" selected>20分</option>
+            <option value="30">30分</option>
+            <option value="60">60分</option>
+        </select>
+    </div>
     
     <button onclick="generateWalk()">目的地を決定！</button>
-    
-    <p>ボタンを押すと現在地を取得し、<br>Googleマップでコースを表示します。</p>
 </div>
+
+<p class="footer">どこにたどり着くかな？</p>
 
 <script>
     function generateWalk() {
         if (!navigator.geolocation) {
-            alert("お使いのブラウザはGPSに対応していません");
+            alert("お使いのデバイスはGPSに対応していません");
             return;
         }
 
-        // 1. 現在地を取得
         navigator.geolocation.getCurrentPosition((position) => {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             
-            // 2. 目的地までの距離を計算 (時速4kmで計算)
-            const minutes = document.getElementById('timeSelect').value;
-            const distanceKm = (4 * (minutes / 60)) / 2; // 往復なので半分にする
+            const speed = parseFloat(document.getElementById('speedSelect').value);
+            const minutes = parseInt(document.getElementById('timeSelect').value);
             
-            // 3. ランダムな方向を計算 (0〜360度)
+            // 往復考慮で片道の距離を計算
+            const distanceKm = (speed * (minutes / 60)) / 2;
+            
             const angle = Math.random() * 360;
-            
-            // 4. 緯度・経度にランダムな距離を加える (ざっくり計算)
-            // 緯度1度 ≒ 111km
             const newLat = lat + (distanceKm * Math.cos(angle * Math.PI / 180)) / 111;
             const newLng = lng + (distanceKm * Math.sin(angle * Math.PI / 180)) / (111 * Math.cos(lat * Math.PI / 180));
 
-            // 5. GoogleマップのURLを生成 (現在地からランダム地点への徒歩ルート)
             const mapUrl = `https://www.google.com/maps/dir/?api=1&origin=${lat},${lng}&destination=${newLat},${newLng}&travelmode=walking`;
             
-            // 6. マップを開く
             window.location.href = mapUrl;
 
         }, (error) => {
-            alert("位置情報の取得に失敗しました。設定を確認してください。");
+            alert("位置情報を許可してください");
         });
     }
 </script>
