@@ -19,16 +19,18 @@
             border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center;
         }
         h1 { color: #2c3e50; font-size: 1.5rem; margin-bottom: 25px; }
-        .label { font-size: 0.9rem; font-weight: bold; color: #555; margin-bottom: 5px; display: block; text-align: left;}
+        .label { font-size: 0.85rem; font-weight: bold; color: #555; margin-bottom: 5px; display: block; text-align: left;}
         select { 
             width: 100%; padding: 15px; font-size: 1rem; border: 2px solid #eee; 
-            border-radius: 15px; margin-bottom: 20px; background: #fafafa;
+            border-radius: 12px; margin-bottom: 20px; background: #fafafa; -webkit-appearance: none;
         }
         button { 
-            background: #2c3e50; color: white; border: none; padding: 20px; 
+            background: #4b6cb7; color: white; border: none; padding: 20px; 
             border-radius: 20px; font-size: 1.2rem; font-weight: bold; width: 100%; 
+            box-shadow: 0 4px 15px rgba(75, 108, 183, 0.3);
         }
-        .info { font-size: 0.8rem; color: #666; margin-top: 15px; }
+        button:active { transform: scale(0.98); opacity: 0.9; }
+        .info { font-size: 0.75rem; color: #7f8c8d; margin-top: 15px; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -38,12 +40,12 @@
     
     <span class="label">🚶‍♂️ ペース</span>
     <select id="speedSelect">
-        <option value="3">ゆっくり</option>
-        <option value="4" selected>ふつう</option>
-        <option value="5">早歩き</option>
+        <option value="3.0">ゆっくり (時速3km)</option>
+        <option value="4.5" selected>ふつう (時速4.5km)</option>
+        <option value="5.5">早歩き (時速5.5km)</option>
     </select>
 
-    <span class="label">⏱ 時間（往復）</span>
+    <span class="label">⏱ 時間 (10分単位)</span>
     <select id="timeSelect">
         <option value="10">10分</option>
         <option value="20">20分</option>
@@ -53,16 +55,20 @@
         <option value="60">60分</option>
     </select>
     
-    <button onclick="generateWalk()">目的地を決定！</button>
-    <p class="info">近くのスポットを優先的に探します</p>
+    <button onclick="generateWalk()">ルートを作成！</button>
+    <p class="info">ボタンを押すと現在地から目的地までの<br>「徒歩ルート」が自動で開きます。</p>
 </div>
 
 <script>
     function generateWalk() {
         if (!navigator.geolocation) {
-            alert("GPSが使えません");
+            alert("お使いの端末でGPSを有効にしてください");
             return;
         }
+
+        // ボタンの文字を変えて処理中であることを伝える
+        const btn = document.querySelector('button');
+        btn.innerText = "探索中...";
 
         navigator.geolocation.getCurrentPosition((position) => {
             const lat = position.coords.latitude;
@@ -70,8 +76,11 @@
             
             const speed = parseFloat(document.getElementById('speedSelect').value);
             const minutes = parseInt(document.getElementById('timeSelect').value);
+            
+            // 往復時間から片道の距離(km)を出す
             const distanceKm = (speed * (minutes / 60)) / 2;
             
+            // ランダムな方角へ飛ばす
             const angle = Math.random() * 360;
             const dLat = (distanceKm * Math.cos(angle * Math.PI / 180)) / 111;
             const dLng = (distanceKm * Math.sin(angle * Math.PI / 180)) / (111 * Math.cos(lat * Math.PI / 180));
@@ -79,14 +88,24 @@
             const destLat = lat + dLat;
             const destLng = lng + dLng;
 
-            // Googleマップの「周辺にある名前付きスポット」を検索するURL形式に変更
-            // 'query=施設' というキーワードを添えることで、座標付近の建物を探しやすくなります
-            const mapUrl = `https://www.google.com/maps/search/?api=1&query=点+at+${destLat},${destLng}`;
+            // 【新ロジック】ルート表示(dir)モードを使用
+            // origin: 出発地（現在地）
+            // destination: 目的地（計算した座標）
+            // travelmode: 交通手段（walking = 徒歩）
+            const mapUrl = `https://maps.google.com/?cid=16283715697482865932&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ7{destLat},${destLng}&travelmode=walking`;
             
+            // マップへ移動
             window.location.href = mapUrl;
 
-        }, () => {
-            alert("位置情報を許可してください");
+            // ボタンを戻す
+            setTimeout(() => { btn.innerText = "ルートを作成！"; }, 2000);
+
+        }, (error) => {
+            alert("位置情報の取得に失敗しました。設定を確認してください。");
+            btn.innerText = "ルートを作成！";
+        }, {
+            enableHighAccuracy: true, // GPS精度を高める
+            timeout: 5000
         });
     }
 </script>
