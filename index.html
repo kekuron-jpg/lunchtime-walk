@@ -4,25 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>歩きお散歩ガチャ</title>
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%234b6cb7%22/><text y=%22.9em%22 x=%225%22 font-size=%2280%22>🌍</text></svg>">
-
     <style>
-        body { font-family: -apple-system, sans-serif; background: linear-gradient(180deg, #a1c4fd 0%, #c2e9fb 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: white; width: 85%; max-width: 350px; padding: 30px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
-        h1 { color: #2c3e50; font-size: 1.5rem; margin-bottom: 25px; }
-        .label { font-size: 0.85rem; font-weight: bold; color: #555; margin-bottom: 5px; display: block; text-align: left;}
-        select { width: 100%; padding: 15px; font-size: 1rem; border: 2px solid #eee; border-radius: 12px; margin-bottom: 20px; background: #fafafa; -webkit-appearance: none; }
-        button { background: #4b6cb7; color: white; border: none; padding: 20px; border-radius: 20px; font-size: 1.2rem; font-weight: bold; width: 100%; box-shadow: 0 4px 15px rgba(75, 108, 183, 0.3); }
-        button:active { transform: scale(0.98); opacity: 0.9; }
-        .info { font-size: 0.75rem; color: #7f8c8d; margin-top: 15px; }
+        body { font-family: -apple-system, sans-serif; background: linear-gradient(180deg, #a1c4fd 0%, #c2e9fb 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .card { background: white; width: 85%; max-width: 350px; padding: 25px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
+        .stats-box { background: #f8f9fa; border-radius: 20px; padding: 15px; margin-bottom: 20px; border: 1px solid #eee; }
+        .stats-label { font-size: 0.75rem; color: #666; margin-bottom: 5px; }
+        .stats-value { font-size: 1.5rem; font-weight: bold; color: #4b6cb7; }
+        h1 { color: #2c3e50; font-size: 1.3rem; margin-bottom: 20px; }
+        .label { font-size: 0.8rem; font-weight: bold; color: #555; margin: 10px 0 5px; display: block; text-align: left;}
+        select { width: 100%; padding: 12px; font-size: 1rem; border: 2px solid #eee; border-radius: 12px; margin-bottom: 10px; background: #fafafa; -webkit-appearance: none; }
+        button { background: #4b6cb7; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 1.1rem; font-weight: bold; width: 100%; margin-top: 10px; box-shadow: 0 4px 15px rgba(75,108, 183, 0.3); }
+        .reset-btn { background: none; color: #999; border: none; font-size: 0.7rem; margin-top: 15px; text-decoration: underline; }
     </style>
 </head>
 <body>
 
 <div class="card">
+    <div class="stats-box">
+        <div class="stats-label">これまでの合計距離</div>
+        <div class="stats-value"><span id="totalDistance">0.00</span> km</div>
+    </div>
+
     <h1>🌍 お散歩ガチャ</h1>
     
     <span class="label">🚶‍♂️ ペース</span>
@@ -37,24 +41,23 @@
         <option value="10">10分</option>
         <option value="20">20分</option>
         <option value="30" selected>30分</option>
-        <option value="40">40分</option>
-        <option value="50">50分</option>
         <option value="60">60分</option>
     </select>
     
-    <button onclick="generateWalk()">マップを開く</button>
-    <p class="info">アプリ版Googleマップを自動起動します</p>
+    <button onclick="generateWalk()">お散歩に出発！</button>
+    <button class="reset-btn" onclick="resetStats()">記録をリセット</button>
 </div>
 
 <script>
+    // 起動時に保存された距離を読み込む
+    let totalDist = parseFloat(localStorage.getItem('walkTotalDistance')) || 0;
+    document.getElementById('totalDistance').innerText = totalDist.toFixed(2);
+
     function generateWalk() {
         if (!navigator.geolocation) {
             alert("GPSを有効にしてください");
             return;
         }
-
-        const btn = document.querySelector('button');
-        btn.innerText = "探索中...";
 
         navigator.geolocation.getCurrentPosition((position) => {
             const lat = position.coords.latitude;
@@ -62,35 +65,36 @@
             
             const speed = parseFloat(document.getElementById('speedSelect').value);
             const minutes = parseInt(document.getElementById('timeSelect').value);
-            const distanceKm = (speed * (minutes / 60)) / 2;
+            const distanceKm = (speed * (minutes / 60)); // 往復の合計距離を記録
+
+            // 【新機能】距離を累計して保存
+            totalDist += distanceKm;
+            localStorage.setItem('walkTotalDistance', totalDist);
+            document.getElementById('totalDistance').innerText = totalDist.toFixed(2);
             
+            // ランダム座標計算
             const angle = Math.random() * 360;
-            const dLat = (distanceKm * Math.cos(angle * Math.PI / 180)) / 111;
-            const dLng = (distanceKm * Math.sin(angle * Math.PI / 180)) / (111 * Math.cos(lat * Math.PI / 180));
+            const dLat = ((distanceKm/2) * Math.cos(angle * Math.PI / 180)) / 111;
+            const dLng = ((distanceKm/2) * Math.sin(angle * Math.PI / 180)) / (111 * Math.cos(lat * Math.PI / 180));
             
-            const destLat = lat + dLat;
-            const destLng = lng + dLng;
-
-            // iPhoneのGoogleマップアプリを直接起動するためのURL
-            // daddr: 目的地座標, directionsmode: 徒歩
-            const appUrl = `comgooglemaps://?daddr=${destLat},${destLng}&directionsmode=walking`;
+            const appUrl = `comgooglemaps://?daddr=${lat + dLat},${lng + dLng}&directionsmode=walking`;
             
-            // アプリ起動を試みる
-            window.location.href = appUrl;
-
-            // 万が一アプリが入っていない場合のバックアップ（2秒後にブラウザ版を開く）
+            // 少しだけ余韻を残してからマップへ
             setTimeout(() => {
-                if (!document.hidden) {
-                    const webUrl = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=walking`;
-                    window.location.href = webUrl;
-                }
-                btn.innerText = "マップを開く";
-            }, 2000);
+                window.location.href = appUrl;
+            }, 500);
 
         }, (error) => {
-            alert("位置情報を取得できませんでした。");
-            btn.innerText = "マップを開く";
+            alert("位置情報を取得できませんでした");
         }, { enableHighAccuracy: true });
+    }
+
+    function resetStats() {
+        if(confirm("これまでの記録を消去しますか？")) {
+            totalDist = 0;
+            localStorage.removeItem('walkTotalDistance');
+            document.getElementById('totalDistance').innerText = "0.00";
+        }
     }
 </script>
 
